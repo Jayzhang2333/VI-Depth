@@ -104,11 +104,28 @@ def read_image(path):
     Returns:
         array: RGB image (0-1)
     """
+    
+
+    # img = cv2.imread(path, cv2.IMREAD_UNCHANGED)  # Use IMREAD_UNCHANGED to preserve the original bit depth
+    # Check if the image was loaded successfully
+    # if img is not None:
+    #     # Determine the bit depth based on the data type of the image
+    #     if img.dtype == 'uint8':
+    #         print("Color depth: 8-bit")
+    #     elif img.dtype == 'uint16':
+    #         print("Color depth: 16-bit")
+    #     else:
+    #         print(f"Color depth: {img.dtype} (uncommon bit depth)")
+    # else:
+    #     print("Error: Image could not be loaded.")
+
     img = cv2.imread(path)
 
     if img.ndim == 2:
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+    
 
+    img = cv2.resize(img, (640, 480))
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) / 255.0
 
     return img

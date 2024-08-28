@@ -71,7 +71,7 @@ class VIDepth(object):
 
         input_sparse_depth_valid = input_sparse_depth_valid.astype(bool)
         input_sparse_depth[~input_sparse_depth_valid] = np.inf # set invalid depth
-        input_sparse_depth = 1.0 / input_sparse_depth
+        input_sparse_depth = 1.0 / input_sparse_depth # 1 / depth because it represents scale
 
         # run depth model
         with torch.no_grad():
