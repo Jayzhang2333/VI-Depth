@@ -81,6 +81,8 @@ def evaluate(dataset_path, depth_predictor, nsamples, sml_model_path):
         # input_image_fp = os.path.join(dataset_path, test_image_list[i])
         input_image_fp = test_image_list[i]
         # print(input_image_fp)
+        # input_image_fp.replace("/home/auv/FLSea", "/mnt/e/FLSea_latest")
+        # input_image_fp.replace("/media/jay/apple/FLSea_latest", "/mnt/e/FLSea_latest")
         # input_image_fp.replace("/home/auv/FLSea", "/media/jay/apple/FLSea_latest")
         # input_image_fp.replace("imgs", "seaErra")
         input_image = utils.read_image(input_image_fp)
@@ -88,6 +90,8 @@ def evaluate(dataset_path, depth_predictor, nsamples, sml_model_path):
         # sparse depth
         # input_sparse_depth_fp = input_image_fp.replace("image", "sparse_depth")
         input_sparse_depth_fp = depth_prior_list[i]
+        # input_sparse_depth_fp.replace("/home/auv/FLSea", "/mnt/e/FLSea_latest")
+        # input_sparse_depth_fp.replace("/media/jay/apple/FLSea_latest", "/mnt/e/FLSea_latest")
         # input_sparse_depth_fp.replace("/home/auv/FLSea", "/media/jay/apple/FLSea_latest")
         input_sparse_depth = generate_feature_map(input_sparse_depth_fp)
         input_sparse_depth[input_sparse_depth <= 0] = 0.0
@@ -109,6 +113,8 @@ def evaluate(dataset_path, depth_predictor, nsamples, sml_model_path):
         # target (ground truth) depth
         # target_depth_fp = input_image_fp.replace("image", "ground_truth")
         target_depth_fp = ground_truth_list[i]
+        # target_depth_fp.replace("/home/auv/FLSea", "/media/jay/apple/FLSea_latest")
+        # target_depth_fp.replace("/media/jay/apple/FLSea_latest", "/mnt/e/FLSea_latest")
         # target_depth_fp.replace("/home/auv/FLSea", "/media/jay/apple/FLSea_latest")
         target_depth = np.array(Image.open(target_depth_fp).resize((640, 480)), dtype=np.float32)
         target_depth[target_depth <= 0] = 0.0
