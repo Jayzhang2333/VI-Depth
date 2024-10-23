@@ -212,6 +212,27 @@ class PrepareForNet(object):
                 sample[item] = np.ascontiguousarray(array)
 
         return sample
+    
+class PrepareForNet_Depth_Anything(object):
+    """Prepare sample for usage as network input.
+    """
+
+    def __init__(self):
+        pass
+
+    def __call__(self, sample):
+        image = np.transpose(sample["image"], (2, 0, 1))
+        sample["image"] = np.ascontiguousarray(image).astype(np.float32)
+
+        if "depth" in sample:
+            depth = sample["depth"].astype(np.float32)
+            sample["depth"] = np.ascontiguousarray(depth)
+        
+        if "mask" in sample:
+            sample["mask"] = sample["mask"].astype(np.float32)
+            sample["mask"] = np.ascontiguousarray(sample["mask"])
+        
+        return sample
 
 
 class Tensorize(object):
@@ -245,6 +266,8 @@ def get_transforms(depth_predictor, sparsifier, nsamples):
         "dpt_swin2_tiny_256"    : [0.5, 0.5, 0.5],
         "dpt_levit_224"         : [0.5, 0.5, 0.5],
         "midas_small"           : [0.485, 0.456, 0.406],
+        "depth_anything_v2_small"     : [0.485, 0.456, 0.406],  # Add depth_anything_v2 mean
+        "depth_anything_v2_base"     : [0.485, 0.456, 0.406],
     }
 
     image_std_dict = {
@@ -255,6 +278,8 @@ def get_transforms(depth_predictor, sparsifier, nsamples):
         "dpt_swin2_tiny_256"    : [0.5, 0.5, 0.5],
         "dpt_levit_224"         : [0.5, 0.5, 0.5],
         "midas_small"           : [0.229, 0.224, 0.225],
+        "depth_anything_v2_small"     : [0.229, 0.224, 0.225],  # Add depth_anything_v2 std
+        "depth_anything_v2_base"     : [0.229, 0.224, 0.225],
     }
 
     resize_method_dict = {
@@ -265,6 +290,8 @@ def get_transforms(depth_predictor, sparsifier, nsamples):
         "dpt_swin2_tiny_256"    : "minimal",
         "dpt_levit_224"         : "minimal",
         "midas_small"           : "upper_bound",
+        "depth_anything_v2_small"     : "lower_bound",  # Add depth_anything_v2 resize method
+        "depth_anything_v2_base"     : "lower_bound",
     }
 
     resize_dict = {
@@ -275,29 +302,62 @@ def get_transforms(depth_predictor, sparsifier, nsamples):
         "dpt_swin2_tiny_256"    : 256,
         "dpt_levit_224"         : 224,
         "midas_small"           : 384,
+        "depth_anything_v2_small"     : 384,  # Add depth_anything_v2 resize value
+        "depth_anything_v2_base"     : 384, 
+    }
+
+    multiple_dict = {
+        "dpt_beit_large_512"    : 32,
+        "dpt_swin2_large_384"   : 32,
+        "dpt_large"             : 32,
+        "dpt_hybrid"            : 32,
+        "dpt_swin2_tiny_256"    : 32,
+        "dpt_levit_224"         : 32,
+        "midas_small"           : 32,
+        "depth_anything_v2_small"     : 14,  # Add depth_anything_v2 resize value
+        "depth_anything_v2_base"     : 14,
     }
 
     keep_aspect_ratio = True
     if "swin2" in depth_predictor or "levit" in depth_predictor:
         keep_aspect_ratio = False
 
-    depth_model_transform_steps = [
-        Resize(
-            width=resize_dict[depth_predictor],
-            height=resize_dict[depth_predictor],
-            resize_target=False,
-            keep_aspect_ratio=keep_aspect_ratio,
-            ensure_multiple_of=32,
-            resize_method=resize_method_dict[depth_predictor],
-            image_interpolation_method=cv2.INTER_CUBIC,
-        ),
-        NormalizeImage(
-            mean=image_mean_dict[depth_predictor], 
-            std=image_std_dict[depth_predictor]
-        ),
-        PrepareForNet(),
-        Tensorize(),     
-    ]
+    if depth_predictor == 'depth_anything_v2_small' or depth_predictor == 'depth_anything_v2_base':
+        depth_model_transform_steps = [
+            Resize(
+                width=resize_dict[depth_predictor],
+                height=resize_dict[depth_predictor],
+                resize_target=False,
+                keep_aspect_ratio=keep_aspect_ratio,
+                ensure_multiple_of=multiple_dict[depth_predictor],
+                resize_method=resize_method_dict[depth_predictor],
+                image_interpolation_method=cv2.INTER_CUBIC,
+            ),
+            NormalizeImage(
+                mean=image_mean_dict[depth_predictor], 
+                std=image_std_dict[depth_predictor]
+            ),
+            PrepareForNet_Depth_Anything(),
+            Tensorize(), 
+        ]
+    else:
+        depth_model_transform_steps = [
+            Resize(
+                width=resize_dict[depth_predictor],
+                height=resize_dict[depth_predictor],
+                resize_target=False,
+                keep_aspect_ratio=keep_aspect_ratio,
+                ensure_multiple_of=multiple_dict[depth_predictor],
+                resize_method=resize_method_dict[depth_predictor],
+                image_interpolation_method=cv2.INTER_CUBIC,
+            ),
+            NormalizeImage(
+                mean=image_mean_dict[depth_predictor], 
+                std=image_std_dict[depth_predictor]
+            ),
+            PrepareForNet(),
+            Tensorize(),     
+        ]
 
     sml_model_transform_steps = [
         Resize(

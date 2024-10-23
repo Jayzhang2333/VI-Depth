@@ -36,8 +36,8 @@ def evaluate(dataset_path, depth_predictor, nsamples, sml_model_path):
     avg_error_w_pred = metrics.ErrorMetricsAverager()
 
     # iterate through inputs list
-    # for i in tqdm(range(len(test_image_list))):
-    for i in tqdm(range(1)):
+    for i in tqdm(range(len(test_image_list))):
+    # for i in tqdm(range(1)):
         
         # image
         input_image_fp = os.path.join(dataset_path, test_image_list[i])
@@ -74,7 +74,7 @@ def evaluate(dataset_path, depth_predictor, nsamples, sml_model_path):
         target_depth_fp = input_image_fp.replace("image", "ground_truth")
         target_depth = np.array(Image.open(target_depth_fp), dtype=np.float32) / 256.0
         target_depth[target_depth <= 0] = 0.0
-        print(f"maximum of depth map is {np.max(target_depth)}")
+        # print(f"maximum of depth map is {np.max(target_depth)}")
 
 
         # target depth valid/mask

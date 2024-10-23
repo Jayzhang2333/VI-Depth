@@ -40,18 +40,17 @@ def generate_feature_map(feature_fp, original_height=240, original_width=320, ne
     return sparse_depth_map
 
 
-def evaluate(dataset_path, depth_predictor, nsamples, sml_model_path):
-    # sml_model_path = '/home/jay/SML_log/20240912-103625/sml_model-500.pth'
+def generate(dataset_path, depth_predictor, nsamples):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device: %s" % device)
 
     # ranges for VOID
-    min_depth, max_depth = 0.05, 8.0
-    min_pred, max_pred = 0.05, 8.0
+    min_depth, max_depth = 0.1, 5.0
+    min_pred, max_pred = 0.1, 7.0
 
     # instantiate method
-    method = pipeline.VIDepth(
-        depth_predictor, nsamples, sml_model_path, 
+    method = pipeline.TrainingDataGenerator(
+        depth_predictor, nsamples, 
         min_pred, max_pred, min_depth, max_depth, device
     )
 
@@ -63,7 +62,7 @@ def evaluate(dataset_path, depth_predictor, nsamples, sml_model_path):
     depth_prior_list = []
 
     # Open and read the CSV file
-    with open(f"{dataset_path}/test_with_matched_features.csv", newline='') as csvfile:
+    with open(f"{dataset_path}/dataset_with_matched_features.csv", newline='') as csvfile:
         csv_reader = csv.reader(csvfile)
         for row in csv_reader:
             test_image_list.append(row[0])  # First column: test image paths
@@ -76,7 +75,7 @@ def evaluate(dataset_path, depth_predictor, nsamples, sml_model_path):
 
     # iterate through inputs list
     for i in tqdm(range(len(test_image_list))):
-    # for i in tqdm(range(500)):
+    # for i in tqdm(range(5)):
         
         # image
         # input_image_fp = os.path.join(dataset_path, test_image_list[i])
@@ -84,7 +83,8 @@ def evaluate(dataset_path, depth_predictor, nsamples, sml_model_path):
         # print(input_image_fp)
         # input_image_fp.replace("/home/auv/FLSea", "/mnt/e/FLSea_latest")
         # input_image_fp.replace("/media/jay/apple/FLSea_latest", "/mnt/e/FLSea_latest")
-        # input_image_fp = input_image_fp.replace("/home/auv/FLSea", "/media/jay/apple/FLSea_latest")
+        input_image_fp = input_image_fp.replace("/home/auv/FLSea", "/media/jay/apple/FLSea_latest")
+        # print()
         # input_image_fp.replace("imgs", "seaErra")
         input_image = utils.read_image(input_image_fp)
 
@@ -93,16 +93,16 @@ def evaluate(dataset_path, depth_predictor, nsamples, sml_model_path):
         input_sparse_depth_fp = depth_prior_list[i]
         # input_sparse_depth_fp.replace("/home/auv/FLSea", "/mnt/e/FLSea_latest")
         # input_sparse_depth_fp.replace("/media/jay/apple/FLSea_latest", "/mnt/e/FLSea_latest")
-        # input_sparse_depth_fp = input_sparse_depth_fp.replace("/home/auv/FLSea", "/media/jay/apple/FLSea_latest")
+        input_sparse_depth_fp = input_sparse_depth_fp.replace("/home/auv/FLSea", "/media/jay/apple/FLSea_latest")
         input_sparse_depth = generate_feature_map(input_sparse_depth_fp)
         input_sparse_depth[input_sparse_depth <= 0] = 0.0
 
         
 
         input_sparse_depth_valid = (input_sparse_depth < max_depth) * (input_sparse_depth > min_depth)
-        if np.sum(input_sparse_depth_valid) <= 3:
-            print("Not enough prior")
-            continue
+        # if np.sum(input_sparse_depth_valid) <= 10:
+        #     print("Not enough prior")
+        #     continue
 
         # sparse depth validity map
         # validity_map_fp = input_image_fp.replace("image", "validity_map")
@@ -116,65 +116,29 @@ def evaluate(dataset_path, depth_predictor, nsamples, sml_model_path):
         target_depth_fp = ground_truth_list[i]
         # target_depth_fp.replace("/home/auv/FLSea", "/media/jay/apple/FLSea_latest")
         # target_depth_fp.replace("/media/jay/apple/FLSea_latest", "/mnt/e/FLSea_latest")
-        # target_depth_fp = target_depth_fp.replace("/home/auv/FLSea", "/media/jay/apple/FLSea_latest")
+        target_depth_fp = target_depth_fp.replace("/home/auv/FLSea", "/media/jay/apple/FLSea_latest")
         target_depth = np.array(Image.open(target_depth_fp).resize((640, 480)), dtype=np.float32)
         target_depth[target_depth <= 0] = 0.0
         # print(f"maximum of depth map is {np.max(target_depth)}")
 
         # target depth valid/mask
-        mask = (target_depth < max_depth)
-        if min_depth is not None:
-            mask *= (target_depth > min_depth)
-        target_depth[~mask] = np.inf  # set invalid depth
-        target_depth = 1.0 / target_depth
+        # mask = (target_depth < max_depth)
+        # if min_depth is not None:
+        #     mask *= (target_depth > min_depth)
+        # target_depth[~mask] = np.inf  # set invalid depth
+        # target_depth = 1.0 / target_depth
 
         # run pipeline
         output = method.run(input_image, input_sparse_depth, validity_map, device)
 
-        # compute error metrics using intermediate (globally aligned) depth
-        error_w_int_depth = metrics.ErrorMetrics()
-        error_w_int_depth.compute(
-            estimate = output["ga_depth"], 
-            target = target_depth, 
-            valid = mask.astype(bool),
-        )
+        ga_path = input_image_fp.replace('imgs', 'ga_result').rsplit('.', 1)[0] + '.npy'
+        gt_path = input_image_fp.replace('imgs', 'gt').rsplit('.', 1)[0] + '.npy'
+        interpolation_sparse_path = input_image_fp.replace('imgs', 'interpolation_sparse').rsplit('.', 1)[0] + '.npy'
 
-        # compute error metrics using SML output depth
-        error_w_pred = metrics.ErrorMetrics()
-        error_w_pred.compute(
-            estimate = output["sml_depth"], 
-            target = target_depth, 
-            valid = mask.astype(bool),
-        )
+        np.save(ga_path, output['ga_depth'])
+        np.save(gt_path, target_depth)
+        np.save(interpolation_sparse_path, output['interpolation_sparse'])
 
-        # accumulate error metrics
-        avg_error_w_int_depth.accumulate(error_w_int_depth)
-        avg_error_w_pred.accumulate(error_w_pred)
-
-
-    # compute average error metrics
-    print("Averaging metrics for globally-aligned depth over {} samples".format(
-        avg_error_w_int_depth.total_count
-    ))
-    avg_error_w_int_depth.average()
-
-    print("Averaging metrics for SML-aligned depth over {} samples".format(
-        avg_error_w_pred.total_count
-    ))
-    avg_error_w_pred.average()
-
-    from prettytable import PrettyTable
-    summary_tb = PrettyTable()
-    summary_tb.field_names = ["metric", "GA Only", "GA+SML"]
-
-    summary_tb.add_row(["RMSE", f"{avg_error_w_int_depth.rmse_avg:7.2f}", f"{avg_error_w_pred.rmse_avg:7.2f}"])
-    summary_tb.add_row(["MAE", f"{avg_error_w_int_depth.mae_avg:7.2f}", f"{avg_error_w_pred.mae_avg:7.2f}"])
-    summary_tb.add_row(["AbsRel", f"{avg_error_w_int_depth.absrel_avg:8.3f}", f"{avg_error_w_pred.absrel_avg:8.3f}"])
-    summary_tb.add_row(["iRMSE", f"{avg_error_w_int_depth.inv_rmse_avg:7.2f}", f"{avg_error_w_pred.inv_rmse_avg:7.2f}"])
-    summary_tb.add_row(["iMAE", f"{avg_error_w_int_depth.inv_mae_avg:7.2f}", f"{avg_error_w_pred.inv_mae_avg:7.2f}"])
-    summary_tb.add_row(["iAbsRel", f"{avg_error_w_int_depth.inv_absrel_avg:8.3f}", f"{avg_error_w_pred.inv_absrel_avg:8.3f}"])
-    
-    print(summary_tb)
 
 
 if __name__=="__main__":
@@ -187,15 +151,13 @@ if __name__=="__main__":
                         help='Name of depth predictor to use in pipeline.')
     parser.add_argument('-ns', '--nsamples', type=int, default=150, 
                         help='Number of sparse metric depth samples available.')
-    parser.add_argument('-sm', '--sml-model-path', type=str, default='', 
-                        help='Path to trained SML model weights.')
+    
 
     args = parser.parse_args()
     print(args)
     
-    evaluate(
+    generate(
         args.dataset_path,
         args.depth_predictor, 
         args.nsamples, 
-        args.sml_model_path,
     )

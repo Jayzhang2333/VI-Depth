@@ -24,3 +24,11 @@ class BaseModel(torch.nn.Module):
 
         else:
             self.load_state_dict(parameters)
+
+    def save(self, path):
+        """Save model to file.
+
+        Args:
+            path (str): file path
+        """
+        torch.save(self.state_dict(), path)

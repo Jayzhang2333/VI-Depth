@@ -1,5 +1,35 @@
 VOID_INTERMEDIATE = {
 
+    "depth_anything_v2_small" : {
+        "void_150" : { 
+            "mean" : {"int_depth" : 0.730, "int_scales" : 0.380}, 
+            "std" : {"int_depth" : 0.226, "int_scales" : 0.102},
+        },
+        "void_500" : { 
+            "mean" : {"int_depth" : 0.736, "int_scales" : 0.366}, 
+            "std" : {"int_depth" : 0.232, "int_scales" : 0.099},
+        },
+        "void_1500" : { 
+            "mean" : {"int_depth" : 0.730, "int_scales" : 0.355}, 
+            "std" : {"int_depth" : 0.232, "int_scales" : 0.096},
+        },
+    },
+
+    "depth_anything_v2_base" : {
+        "void_150" : { 
+            "mean" : {"int_depth" : 0.730, "int_scales" : 0.380}, 
+            "std" : {"int_depth" : 0.226, "int_scales" : 0.102},
+        },
+        "void_500" : { 
+            "mean" : {"int_depth" : 0.736, "int_scales" : 0.366}, 
+            "std" : {"int_depth" : 0.232, "int_scales" : 0.099},
+        },
+        "void_1500" : { 
+            "mean" : {"int_depth" : 0.730, "int_scales" : 0.355}, 
+            "std" : {"int_depth" : 0.232, "int_scales" : 0.096},
+        },
+    },
+
     "dpt_beit_large_512" : {
         "void_150" : { 
             "mean" : {"int_depth" : 0.730, "int_scales" : 0.380}, 

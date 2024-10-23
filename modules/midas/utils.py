@@ -119,6 +119,7 @@ def read_image(path):
     # else:
     #     print("Error: Image could not be loaded.")
 
+    #this is for FLSea dataset
     img = cv2.imread(path)
 
     if img.ndim == 2:
