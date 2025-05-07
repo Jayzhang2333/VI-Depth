@@ -40,13 +40,11 @@ def evaluate(dataset_path, depth_predictor, nsamples, sml_model_path):
     # for i in tqdm(range(1)):
         
         # image
-        # input_image_fp = os.path.join(dataset_path, test_image_list[i])
-        input_image_fp = '/home/jay/Downloads/void_release/void_150/data/office3/image/1552625446.7714.png'
+        input_image_fp = os.path.join(dataset_path, test_image_list[i])
         input_image = utils.read_image(input_image_fp)
 
         # sparse depth
         input_sparse_depth_fp = input_image_fp.replace("image", "sparse_depth")
-       
 
         # img = Image.open(input_sparse_depth_fp)
 
@@ -65,11 +63,9 @@ def evaluate(dataset_path, depth_predictor, nsamples, sml_model_path):
 
         input_sparse_depth = np.array(Image.open(input_sparse_depth_fp), dtype=np.float32) / 256.0
         input_sparse_depth[input_sparse_depth <= 0] = 0.0
-        input_sparse_depth[input_sparse_depth >= 1] = 0.0
         
         # sparse depth validity map
         validity_map_fp = input_image_fp.replace("image", "validity_map")
-       
         validity_map = np.array(Image.open(validity_map_fp), dtype=np.float32)
         assert(np.all(np.unique(validity_map) == [0, 256]))
         validity_map[validity_map > 0] = 1
@@ -79,8 +75,6 @@ def evaluate(dataset_path, depth_predictor, nsamples, sml_model_path):
         target_depth = np.array(Image.open(target_depth_fp), dtype=np.float32) / 256.0
         target_depth[target_depth <= 0] = 0.0
         # print(f"maximum of depth map is {np.max(target_depth)}")
-
-        
 
 
         # target depth valid/mask
@@ -92,32 +86,6 @@ def evaluate(dataset_path, depth_predictor, nsamples, sml_model_path):
 
         # run pipeline
         output = method.run(input_image, input_sparse_depth, validity_map, device)
-
-        import matplotlib.pyplot as plt
-        fig, axes = plt.subplots(1, 3, figsize=(18, 6))  # 1 row, 3 columns
-         # Display each depth image with a colorbar
-        images = []
-        images.append(axes[0].imshow(target_depth, cmap='viridis'))
-        axes[0].set_title('Depth 1')
-        axes[0].axis('off')
-        cbar1 = fig.colorbar(images[0], ax=axes[0], orientation='vertical')
-        cbar1.set_label('Depth Value')
-
-        images.append(axes[1].imshow(1.0/output["ga_depth"], cmap='viridis'))
-        axes[1].set_title('GA')
-        axes[1].axis('off')
-        cbar2 = fig.colorbar(images[1], ax=axes[1], orientation='vertical')
-        cbar2.set_label('Depth Value')
-
-        images.append(axes[2].imshow(1.0/output["sml_depth"], cmap='viridis'))
-        axes[2].set_title('SML')
-        axes[2].axis('off')
-        cbar3 = fig.colorbar(images[2], ax=axes[2], orientation='vertical')
-        cbar3.set_label('Depth Value')
-
-        # Adjust layout and show the plot
-        plt.tight_layout()
-        plt.show()
 
         # compute error metrics using intermediate (globally aligned) depth
         error_w_int_depth = metrics.ErrorMetrics()

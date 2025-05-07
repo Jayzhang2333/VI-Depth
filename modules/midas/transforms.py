@@ -268,6 +268,7 @@ def get_transforms(depth_predictor, sparsifier, nsamples):
         "midas_small"           : [0.485, 0.456, 0.406],
         "depth_anything_v2_small"     : [0.485, 0.456, 0.406],  # Add depth_anything_v2 mean
         "depth_anything_v2_base"     : [0.485, 0.456, 0.406],
+        "depth_anything_v2_large"     : [0.485, 0.456, 0.406],
     }
 
     image_std_dict = {
@@ -280,6 +281,7 @@ def get_transforms(depth_predictor, sparsifier, nsamples):
         "midas_small"           : [0.229, 0.224, 0.225],
         "depth_anything_v2_small"     : [0.229, 0.224, 0.225],  # Add depth_anything_v2 std
         "depth_anything_v2_base"     : [0.229, 0.224, 0.225],
+        "depth_anything_v2_large"     : [0.229, 0.224, 0.225],
     }
 
     resize_method_dict = {
@@ -292,6 +294,7 @@ def get_transforms(depth_predictor, sparsifier, nsamples):
         "midas_small"           : "upper_bound",
         "depth_anything_v2_small"     : "lower_bound",  # Add depth_anything_v2 resize method
         "depth_anything_v2_base"     : "lower_bound",
+        "depth_anything_v2_large"     : "lower_bound",
     }
 
     resize_dict = {
@@ -304,6 +307,7 @@ def get_transforms(depth_predictor, sparsifier, nsamples):
         "midas_small"           : 384,
         "depth_anything_v2_small"     : 384,  # Add depth_anything_v2 resize value
         "depth_anything_v2_base"     : 384, 
+        "depth_anything_v2_large"     : 384, 
     }
 
     multiple_dict = {
@@ -316,13 +320,14 @@ def get_transforms(depth_predictor, sparsifier, nsamples):
         "midas_small"           : 32,
         "depth_anything_v2_small"     : 14,  # Add depth_anything_v2 resize value
         "depth_anything_v2_base"     : 14,
+        "depth_anything_v2_large"     : 14,
     }
 
     keep_aspect_ratio = True
     if "swin2" in depth_predictor or "levit" in depth_predictor:
         keep_aspect_ratio = False
 
-    if depth_predictor == 'depth_anything_v2_small' or depth_predictor == 'depth_anything_v2_base':
+    if depth_predictor == 'depth_anything_v2_small' or depth_predictor == 'depth_anything_v2_base'or depth_predictor == 'depth_anything_v2_large':
         depth_model_transform_steps = [
             Resize(
                 width=resize_dict[depth_predictor],

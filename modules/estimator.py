@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 def compute_scale_and_shift_ls(prediction, target, mask):
     # tuple specifying with axes to sum
@@ -18,6 +19,7 @@ def compute_scale_and_shift_ls(prediction, target, mask):
     x_1 = np.zeros_like(b_1)
 
     det = a_00 * a_11 - a_01 * a_01
+    # print(det)
     # A needs to be a positive definite matrix.
     valid = det > 0
 
@@ -39,22 +41,64 @@ class LeastSquaresEstimator(object):
 
     def compute_scale_and_shift(self):
         self.scale, self.shift = compute_scale_and_shift_ls(self.estimate, self.target, self.valid)
+        # print(f"shift is {self.shift}")
+        # print(f"scale is {self.scale}")
 
     def apply_scale_and_shift(self):
         self.output = self.estimate * self.scale + self.shift
+        self.output2 = self.estimate * self.scale + self.shift
+
+        # fig, axes = plt.subplots(1, 2, figsize=(12, 6))  # Adjust figsize as needed
+
+        # # Plot the first image on the first subplot
+        # im0 = axes[0].imshow(self.estimate, cmap='inferno')
+        # axes[0].set_title("before scale and shift")
+        # fig.colorbar(im0, ax=axes[0], label='Depth')  # Adds a color bar to the first subplot
+
+        
+
+        # im1 = axes[1].imshow(1.0/self.output, cmap='inferno')
+        # axes[1].set_title("after scale")
+        # fig.colorbar(im1, ax=axes[1], label='Depth')  # Adds a color bar to the first subplot
+
+        
+        # Plot the second image on the second subplot
+        # im2 = axes[0].imshow(1.0/self.output, cmap='inferno')  # Replace 'second_image' with your second image
+        # axes[0].set_title("Global Alignment Result")
+        # fig.colorbar(im2, ax=axes[0], label='Depth')  # Adds a color bar to the second subplot
+
+        # im3 = axes[1].imshow(1.0/self.target, cmap='inferno')
+        # axes[1].set_title("Sparse Prior")
+        # fig.colorbar(im3, ax=axes[1], label='Depth')  # Adds a color bar to the first subplot
+
+        # # Optional: Adjust layout to prevent overlap
+        # plt.tight_layout()
+
+        # # Display the figure
+        # plt.show()
 
     def clamp_min_max(self, clamp_min=None, clamp_max=None):
+        # Ensure the output array is float32
+        self.output = self.output.astype(np.float32)
+        
         if clamp_min is not None:
+            # Convert clamp_min to float32
+            clamp_min = np.float32(clamp_min)
             if clamp_min > 0:
-                clamp_min_inv = 1.0/clamp_min
-                self.output[self.output > clamp_min_inv] = clamp_min_inv
+                clamp_min_inv = np.float32(1.0) / clamp_min
+                # Clamp values above clamp_min_inv
+                mask = self.output > clamp_min_inv
+                self.output[mask] = clamp_min_inv
                 assert np.max(self.output) <= clamp_min_inv
-            else: # divide by zero, so skip
-                pass
+            # If clamp_min is 0 or negative, skip to avoid division by zero
+                
         if clamp_max is not None:
-            clamp_max_inv = 1.0/clamp_max
-            self.output[self.output < clamp_max_inv] = clamp_max_inv
-            # print(np.min(self.output), clamp_max_inv)
+            # Convert clamp_max to float32
+            clamp_max = np.float32(clamp_max)
+            clamp_max_inv = np.float32(1.0) / clamp_max
+            # Clamp values below clamp_max_inv
+            mask = self.output < clamp_max_inv
+            self.output[mask] = clamp_max_inv
             assert np.min(self.output) >= clamp_max_inv
-        # check for nonzero range
-        # assert np.min(self.output) != np.max(self.output)
+            # check for nonzero range
+            # assert np.min(self.output) != np.max(self.output)

@@ -126,7 +126,7 @@ def read_image(path):
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     
 
-    img = cv2.resize(img, (640, 480))
+    # img = cv2.resize(img, (640, 480))
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) / 255.0
 
     return img

@@ -1,6 +1,36 @@
 import numpy as np
 import torch
 
+def rmse_silog(predicted, ground_truth):
+    """
+    Computes the RMSE_silog as described in the provided formula.
+
+    Parameters:
+    - predicted: np.array, predicted depth values (N,)
+    - ground_truth: np.array, ground truth depth values (N,)
+
+    Returns:
+    - rmse_silog: scalar, RMSE_silog error
+    """
+    # Ensure no division by zero or log of zero
+    epsilon = 1e-8
+    predicted = np.maximum(predicted, epsilon)
+    ground_truth = np.maximum(ground_truth, epsilon)
+
+    # Compute log values
+    log_predicted = np.log(predicted)
+    log_ground_truth = np.log(ground_truth)
+
+    # Compute alpha
+    N = len(predicted)
+    alpha = np.sum(log_ground_truth - log_predicted) / N
+
+    # Compute RMSE_silog
+    rmse_silog = np.sqrt(np.mean((log_predicted - log_ground_truth + alpha) ** 2))
+
+    return rmse_silog
+
+
 def rmse(estimate, target):
     return np.sqrt(np.mean((estimate - target) ** 2))
 
@@ -38,6 +68,7 @@ class ErrorMetrics(object):
         self.rmse = rmse(1000.0*estimate, 1000.0*target)
         self.mae = mae(1000.0*estimate, 1000.0*target)
         self.absrel = absrel(1000.0*estimate, 1000.0*target)
+        self.rmse_silog = rmse_silog(1000.0*estimate, 1000.0*target)
 
         # inverse depth error, estimate in meters, convert units to 1/km
         self.inv_rmse = inv_rmse(0.001*estimate, 0.001*target)
@@ -47,7 +78,7 @@ class ErrorMetrics(object):
 class ErrorMetricsAverager(object):
     def __init__(self):
         # initialize avg accumulators to zero
-        self.rmse_avg, self.mae_avg, self.absrel_avg = 0, 0, 0
+        self.rmse_avg, self.mae_avg, self.absrel_avg, self.rmse_silog_avg= 0, 0, 0, 0
         self.inv_rmse_avg, self.inv_mae_avg, self.inv_absrel_avg = 0, 0, 0
         self.total_count = 0
 
@@ -58,6 +89,7 @@ class ErrorMetricsAverager(object):
         self.rmse_avg += error_metrics.rmse
         self.mae_avg += error_metrics.mae
         self.absrel_avg += error_metrics.absrel
+        self.rmse_silog_avg += error_metrics.rmse_silog
 
         self.inv_rmse_avg += error_metrics.inv_rmse
         self.inv_mae_avg += error_metrics.inv_mae
@@ -70,6 +102,7 @@ class ErrorMetricsAverager(object):
         self.rmse_avg = self.rmse_avg / self.total_count
         self.mae_avg = self.mae_avg / self.total_count
         self.absrel_avg = self.absrel_avg / self.total_count
+        self.rmse_silog_avg = self.rmse_silog_avg / self.total_count
         # print(f"Averaging inv depth metrics over {self.total_count} samples")
         self.inv_rmse_avg = self.inv_rmse_avg / self.total_count
         self.inv_mae_avg = self.inv_mae_avg / self.total_count
